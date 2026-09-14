@@ -1,0 +1,586 @@
+// Schéma Prisma — Plateforme de gestion des licences FSG
+// Voir ARCHITECTURE.md §4 pour la description du modèle de données.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  FEDERAL_ADMIN
+  AGENT
+  CLUB_MANAGER
+  ATHLETE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ClubStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Sex {
+  M
+  F
+}
+
+enum AthleteStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum SeasonStatus {
+  UPCOMING
+  ACTIVE
+  CLOSED
+}
+
+enum RequestType {
+  NEW
+  RENEWAL
+  REPLACEMENT
+  UPDATE
+}
+
+enum RequestStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  CORRECTION_REQUESTED
+  PAYMENT_PENDING
+  PAYMENT_VERIFICATION
+  APPROVED
+  REJECTED
+}
+
+enum LicenseStatus {
+  DRAFT
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+  CANCELLED
+  REJECTED
+}
+
+enum PaymentMethod {
+  CASH
+  WAVE
+  ORANGE_MONEY
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  VERIFIED
+  FAILED
+  REJECTED
+  REFUNDED
+}
+
+enum DocumentType {
+  PHOTO
+  MEDICAL_CERTIFICATE
+  PROOF_OF_IDENTITY
+  PAYMENT_PROOF
+  ADMINISTRATIVE
+  OTHER
+}
+
+enum DocumentOwnerType {
+  ATHLETE
+  CLUB
+  LICENSE_REQUEST
+  PAYMENT
+}
+
+enum NotificationType {
+  REQUEST_SUBMITTED
+  REQUEST_APPROVED
+  REQUEST_REJECTED
+  REQUEST_CORRECTION_REQUESTED
+  PAYMENT_RECEIVED
+  PAYMENT_VERIFIED
+  LICENSE_ISSUED
+  LICENSE_EXPIRING_SOON
+  LICENSE_EXPIRED
+  LICENSE_SUSPENDED
+  NEW_REQUEST_ADMIN
+  PAYMENT_TO_VERIFY_ADMIN
+  INCOMPLETE_FILE_ADMIN
+}
+
+enum SequenceType {
+  REQUEST
+  LICENSE
+  CLUB
+  PAYMENT
+}
+
+// ---------------------------------------------------------------------------
+// Identité & accès
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+
+  // Portée : renseigné uniquement pour CLUB_MANAGER / ATHLETE
+  clubId    String?
+  club      Club?    @relation(fields: [clubId], references: [id])
+  athleteId String?  @unique
+  athlete   Athlete? @relation(fields: [athleteId], references: [id])
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  passwordResetTokens PasswordResetToken[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+  uploadedDocuments   Document[]           @relation("DocumentUploadedBy")
+  agentRequests       LicenseRequest[]     @relation("RequestAgent")
+  validatedRequests   LicenseRequest[]     @relation("RequestValidator")
+  verifiedPayments    Payment[]            @relation("PaymentVerifiedBy")
+  validatedLicenses   License[]            @relation("LicenseValidatedBy")
+
+  @@index([clubId])
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Clubs
+// ---------------------------------------------------------------------------
+
+model Club {
+  id                String     @id @default(cuid())
+  code              String     @unique // ex: DKR-001, généré à la création
+  name              String
+  acronym           String?
+  affiliationNumber String?    @unique
+  address           String?
+  city              String?
+  region            String?
+  phone             String?
+  email             String?
+  managerName       String?
+  presidentName     String?
+  logoDocumentId    String?
+  status            ClubStatus @default(ACTIVE)
+  foundedAt         DateTime?
+  notes             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users           User[]
+  athletes        Athlete[]
+  licenseRequests LicenseRequest[]
+  licenses        License[]
+  payments        Payment[]
+  documents       Document[]
+
+  @@index([status])
+  @@map("clubs")
+}
+
+// ---------------------------------------------------------------------------
+// Référentiels sportifs (configurables, jamais hardcodés côté frontend)
+// ---------------------------------------------------------------------------
+
+model Discipline {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  name   String
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories      Category[]
+  athletes        Athlete[]
+  licenseRequests LicenseRequest[]
+  licenses        License[]
+  licenseFees     LicenseFee[]
+
+  @@map("disciplines")
+}
+
+model Category {
+  id           String  @id @default(cuid())
+  name         String
+  disciplineId String?
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+  minAge       Int?
+  maxAge       Int?
+  sex          Sex?
+  active       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  athletes        Athlete[]
+  licenseRequests LicenseRequest[]
+  licenses        License[]
+  licenseFees     LicenseFee[]
+
+  @@index([disciplineId])
+  @@map("categories")
+}
+
+model Season {
+  id        String       @id @default(cuid())
+  name      String       @unique // ex: "2026-2027"
+  startDate DateTime
+  endDate   DateTime
+  status    SeasonStatus @default(UPCOMING)
+  isCurrent Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  licenseRequests LicenseRequest[]
+  licenses        License[]
+  licenseFees     LicenseFee[]
+  sequences       NumberSequence[]
+
+  // Une seule saison courante à la fois : index unique partiel créé en migration SQL
+  // (Prisma ne supporte pas nativement les index partiels dans le schéma) :
+  // CREATE UNIQUE INDEX seasons_is_current_unique ON seasons (is_current) WHERE is_current = true;
+
+  @@map("seasons")
+}
+
+model LicenseFee {
+  id           String      @id @default(cuid())
+  seasonId     String
+  season       Season      @relation(fields: [seasonId], references: [id])
+  disciplineId String?
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+  categoryId   String?
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  requestType  RequestType @default(NEW)
+  amount       Decimal     @db.Decimal(10, 2)
+  currency     String      @default("XOF")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([seasonId])
+  @@map("license_fees")
+}
+
+// ---------------------------------------------------------------------------
+// Athlètes
+// ---------------------------------------------------------------------------
+
+model Athlete {
+  id           String        @id @default(cuid())
+  federalNumber String?      @unique // attribué à la première licence délivrée
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  sex          Sex
+  nationality  String        @default("Sénégalaise")
+  phone        String?
+  email        String?
+  address      String?
+  city         String?
+  photoDocumentId String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  clubId       String
+  club         Club       @relation(fields: [clubId], references: [id])
+  disciplineId String?
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id])
+  categoryId   String?
+  category     Category?   @relation(fields: [categoryId], references: [id])
+  status       AthleteStatus @default(ACTIVE)
+
+  medicalNotes String? // informations médicales strictement nécessaires au dossier
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user            User?
+  licenseRequests LicenseRequest[]
+  licenses        License[]
+  payments        Payment[]
+  documents       Document[]
+
+  @@index([clubId])
+  @@index([disciplineId])
+  @@index([categoryId])
+  @@index([lastName, firstName])
+  @@map("athletes")
+}
+
+// ---------------------------------------------------------------------------
+// Demandes de licence
+// ---------------------------------------------------------------------------
+
+model LicenseRequest {
+  id     String        @id @default(cuid())
+  number String        @unique // REQ-2026-000124
+
+  athleteId String
+  athlete   Athlete @relation(fields: [athleteId], references: [id])
+  clubId    String
+  club      Club    @relation(fields: [clubId], references: [id])
+  seasonId  String
+  season    Season  @relation(fields: [seasonId], references: [id])
+
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+
+  type   RequestType   @default(NEW)
+  status RequestStatus @default(DRAFT)
+
+  // Renouvellement : lien vers la licence d'origine, jamais écrasée
+  originLicenseId String?
+  originLicense   License? @relation("RequestOriginLicense", fields: [originLicenseId], references: [id])
+
+  submittedAt DateTime?
+  processedAt DateTime?
+
+  agentId          String?
+  agent            User?   @relation("RequestAgent", fields: [agentId], references: [id])
+  validatorId      String?
+  validator        User?   @relation("RequestValidator", fields: [validatorId], references: [id])
+  rejectionReason  String?
+  correctionReason String?
+  notes            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments       Payment[]
+  resultLicense  License?
+  documents      Document[]
+
+  @@index([clubId])
+  @@index([athleteId])
+  @@index([seasonId])
+  @@index([status])
+  @@map("license_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Paiements
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id        String @id @default(cuid())
+  reference String @unique // généré serveur, ex: PAY-2026-000456
+
+  licenseRequestId String
+  licenseRequest   LicenseRequest @relation(fields: [licenseRequestId], references: [id])
+  licenseId        String?
+  license          License?       @relation(fields: [licenseId], references: [id])
+  athleteId        String
+  athlete          Athlete        @relation(fields: [athleteId], references: [id])
+  clubId           String
+  club             Club           @relation(fields: [clubId], references: [id])
+
+  amount               Decimal       @db.Decimal(10, 2)
+  currency             String        @default("XOF")
+  method               PaymentMethod
+  status               PaymentStatus @default(PENDING)
+  transactionReference String?
+  paidAt               DateTime?
+  verifiedAt           DateTime?
+  verifiedById         String?
+  verifiedBy           User?         @relation("PaymentVerifiedBy", fields: [verifiedById], references: [id])
+  proofDocumentId      String?
+  notes                String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+
+  @@index([clubId])
+  @@index([status])
+  @@index([licenseRequestId])
+  @@map("payments")
+}
+
+// ---------------------------------------------------------------------------
+// Licences
+// ---------------------------------------------------------------------------
+
+model License {
+  id     String @id @default(cuid())
+  number String @unique // FSG-2026-001245
+
+  athleteId String
+  athlete   Athlete @relation(fields: [athleteId], references: [id])
+  clubId    String
+  club      Club    @relation(fields: [clubId], references: [id])
+  seasonId  String
+  season    Season  @relation(fields: [seasonId], references: [id])
+
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id])
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+
+  originRequestId String         @unique
+  originRequest   LicenseRequest @relation(fields: [originRequestId], references: [id])
+
+  issuedAt      DateTime
+  expiresAt     DateTime
+  status        LicenseStatus @default(DRAFT)
+  validatedAt   DateTime?
+  validatedById String?
+  validatedBy   User?         @relation("LicenseValidatedBy", fields: [validatedById], references: [id])
+  suspensionReason String?
+  qrCodeUrl     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments        Payment[]
+  renewalRequests LicenseRequest[] @relation("RequestOriginLicense")
+  documents       Document[]
+
+  @@index([clubId])
+  @@index([status])
+  @@index([seasonId])
+  @@index([expiresAt])
+  @@index([athleteId])
+  @@map("licenses")
+}
+
+// ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+model Document {
+  id         String            @id @default(cuid())
+  type       DocumentType
+  name       String
+  storageKey String // clé/chemin dans le StorageProvider, jamais le binaire en DB
+  mimeType   String
+  size       Int
+
+  ownerType DocumentOwnerType
+  athleteId       String?
+  athlete         Athlete?        @relation(fields: [athleteId], references: [id])
+  clubId          String?
+  club            Club?           @relation(fields: [clubId], references: [id])
+  licenseRequestId String?
+  licenseRequest   LicenseRequest? @relation(fields: [licenseRequestId], references: [id])
+  paymentId        String?
+  payment          Payment?        @relation(fields: [paymentId], references: [id])
+  licenseId        String?
+  license          License?        @relation(fields: [licenseId], references: [id])
+
+  uploadedById String
+  uploadedBy   User   @relation("DocumentUploadedBy", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([athleteId])
+  @@index([clubId])
+  @@index([licenseRequestId])
+  @@map("documents")
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  type        NotificationType
+  title       String
+  message     String
+  link        String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String // ex: "license.approve", "user.login", "payment.verify"
+  entity    String // ex: "License", "User"
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Numérotation atomique (voir ARCHITECTURE.md §7 / DECISIONS.md D7)
+// ---------------------------------------------------------------------------
+
+model NumberSequence {
+  id         String       @id @default(cuid())
+  type       SequenceType
+  year       Int
+  lastNumber Int          @default(0)
+  seasonId   String?
+  season     Season?      @relation(fields: [seasonId], references: [id])
+
+  @@unique([type, year])
+  @@map("number_sequences")
+}
