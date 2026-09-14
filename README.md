@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FSG Gestion — Plateforme de gestion des licences
 
-## Getting Started
+Plateforme de gestion des licences sportives pour la Fédération Sénégalaise de Gymnastique (FSG).
 
-First, run the development server:
+Voir [ARCHITECTURE.md](ARCHITECTURE.md) pour l'architecture technique, [DECISIONS.md](DECISIONS.md)
+pour la justification des choix techniques, et [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) pour l'identité
+visuelle.
+
+## Stack
+
+Next.js 16 (App Router, TypeScript) · PostgreSQL · Prisma · Auth.js · Tailwind CSS + shadcn/ui.
+
+## Installation
+
+```bash
+npm install
+cp .env.example .env
+```
+
+Renseigner `DATABASE_URL` dans `.env` avec une base PostgreSQL (Neon, Supabase, ou instance locale).
+Générer `AUTH_SECRET` avec `openssl rand -base64 32`.
+
+## Base de données
+
+```bash
+npm run db:migrate   # applique les migrations (crée la base au premier lancement)
+npm run db:seed      # données de démonstration (comptes, clubs, disciplines, saison)
+```
+
+Le script de seed affiche les identifiants des comptes de démonstration créés (un par rôle).
+
+## Lancement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Application disponible sur [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tâche planifiée (expiration des licences)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+En développement/self-host sans scheduler externe :
 
-## Learn More
+```bash
+npm run worker
+```
 
-To learn more about Next.js, take a look at the following resources:
+En production avec un scheduler externe (cron système, Vercel Cron, GitHub Actions), appeler
+`POST /api/cron/expire-licenses` avec l'en-tête `Authorization: Bearer <CRON_SECRET>`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Vérifications
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npx tsc --noEmit   # typecheck
+npx eslint .       # lint
+npm run build      # build de production
+```
 
-## Deploy on Vercel
+## Déploiement
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Voir ARCHITECTURE.md §14 pour les options recommandées (VPS + Docker, ou Vercel + Neon + R2).
