@@ -1,19 +1,24 @@
 import type { UserRole } from "@prisma/client";
-import {
-  Building2,
-  CreditCard,
-  FileText,
-  LayoutDashboard,
-  Settings,
-  Users,
-  Wallet,
-  type LucideIcon,
-} from "lucide-react";
+
+/**
+ * Les composants d'icône (fonctions React) ne peuvent pas traverser la
+ * frontière Server → Client Component (RSC). On ne stocke ici qu'un nom
+ * d'icône ; la résolution vers le composant lucide-react se fait côté
+ * client dans app-sidebar.tsx.
+ */
+export type IconName =
+  | "LayoutDashboard"
+  | "FileText"
+  | "CreditCard"
+  | "Wallet"
+  | "Users"
+  | "Building2"
+  | "Settings";
 
 export type NavItem = {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: IconName;
   roles: UserRole[] | "all";
 };
 
@@ -36,7 +41,7 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: "Tableau de bord",
         href: "/dashboard",
-        icon: LayoutDashboard,
+        icon: "LayoutDashboard",
         roles: "all",
       },
     ],
@@ -47,19 +52,19 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: "Demandes",
         href: "/requests",
-        icon: FileText,
+        icon: "FileText",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN", "AGENT", "CLUB_MANAGER"],
       },
       {
         label: "Licences",
         href: "/licenses",
-        icon: CreditCard,
+        icon: "CreditCard",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN", "AGENT", "CLUB_MANAGER"],
       },
       {
         label: "Paiements",
         href: "/payments",
-        icon: Wallet,
+        icon: "Wallet",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN"],
       },
     ],
@@ -70,19 +75,19 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: "Athlètes",
         href: "/athletes",
-        icon: Users,
+        icon: "Users",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN", "AGENT", "CLUB_MANAGER"],
       },
       {
         label: "Clubs",
         href: "/admin/clubs",
-        icon: Building2,
+        icon: "Building2",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN", "AGENT"],
       },
       {
         label: "Mon club",
         href: "/club/profile",
-        icon: Building2,
+        icon: "Building2",
         roles: ["CLUB_MANAGER"],
       },
     ],
@@ -93,13 +98,13 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: "Utilisateurs",
         href: "/admin/users",
-        icon: Users,
+        icon: "Users",
         roles: ["SUPER_ADMIN"],
       },
       {
         label: "Paramètres",
         href: "/admin/settings",
-        icon: Settings,
+        icon: "Settings",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN", "AGENT"],
       },
     ],

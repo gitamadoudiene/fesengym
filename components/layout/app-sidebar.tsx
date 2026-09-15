@@ -2,8 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Building2,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  Settings,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { NavGroup } from "./nav-config";
+import type { IconName, NavGroup } from "./nav-config";
+
+const ICONS: Record<IconName, LucideIcon> = {
+  LayoutDashboard,
+  FileText,
+  CreditCard,
+  Wallet,
+  Users,
+  Building2,
+  Settings,
+};
 
 export function AppSidebar({ navGroups }: { navGroups: NavGroup[] }) {
   const pathname = usePathname();
@@ -36,7 +56,7 @@ export function AppSidebar({ navGroups }: { navGroups: NavGroup[] }) {
               {group.items.map((item) => {
                 const isActive =
                   pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const Icon = item.icon;
+                const Icon = ICONS[item.icon];
                 return (
                   <li key={item.href}>
                     <Link
