@@ -13,7 +13,7 @@ const PUBLIC_PREFIXES = [
   "/api/auth",
   "/api/public",
   "/api/cron",
-  "/api/_diag",
+  "/api/diag-check",
 ];
 
 function isPublicPath(pathname: string): boolean {
