@@ -45,7 +45,9 @@ export type Action =
   | "settings.manage" // saisons, disciplines, catégories, tarifs — Super Admin uniquement
   | "settings.view" // lecture des référentiels (nécessaire pour créer athlètes/demandes)
   | "users.manage"
-  | "audit.view";
+  | "audit.view"
+  | "card.order" // club : commander une carte physique
+  | "card.manage"; // admin : mettre à jour le statut d'une commande
 
 /**
  * Vérifie qu'un utilisateur peut effectuer une action, indépendamment de la
@@ -85,7 +87,11 @@ export function can(user: SessionUser, action: Action): boolean {
     case "athlete.manage":
     case "request.create":
     case "payment.record":
+    case "card.order":
       return isAdminRole(user.role) || user.role === "CLUB_MANAGER";
+
+    case "card.manage":
+      return hasAdminRankAtLeast(user.role, "FEDERAL_ADMIN");
 
     default:
       return false;

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { assertCan, scopedClubId, type SessionUser } from "@/lib/auth/permissions";
 import { generateRequestNumber } from "@/lib/modules/numbering/service";
 import { issueLicenseForRequest } from "@/lib/modules/licenses/service";
+import { assertClubActiveForSelfService } from "@/lib/modules/clubs/service";
 import { writeAuditLog } from "@/lib/modules/audit/service";
 import { notifyClub, notifyFederalAdmins } from "@/lib/modules/notifications/service";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors";
@@ -71,6 +72,7 @@ export async function createRequest(user: SessionUser, input: CreateRequestInput
   if (restrictedClubId && athlete.clubId !== restrictedClubId) {
     throw new NotFoundError("Athlète introuvable.");
   }
+  await assertClubActiveForSelfService(user, athlete.clubId);
 
   const [season, discipline, category] = await Promise.all([
     prisma.season.findUnique({ where: { id: input.seasonId } }),

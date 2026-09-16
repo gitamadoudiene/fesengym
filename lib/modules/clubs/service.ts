@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { assertCan, scopedClubId, type SessionUser } from "@/lib/auth/permissions";
 import { generateClubCode } from "@/lib/modules/numbering/service";
 import { writeAuditLog } from "@/lib/modules/audit/service";
-import { NotFoundError } from "@/lib/errors";
+import { ConflictError, NotFoundError } from "@/lib/errors";
 import type {
   CreateClubInput,
   ListClubsQuery,
@@ -90,6 +90,24 @@ export async function getClubById(user: SessionUser, id: string) {
   });
   if (!club) throw new NotFoundError("Club introuvable.");
   return club;
+}
+
+/**
+ * Un club dont l'adhésion n'est pas encore validée (PENDING/REJECTED) ne
+ * peut effectuer aucune action en libre-service (créer un athlète, une
+ * demande, un paiement) — voir DECISIONS.md sur l'auto-inscription.
+ * N'affecte que les CLUB_MANAGER ; un admin agissant pour ce club reste
+ * volontaire et n'est pas bloqué ici.
+ */
+export async function assertClubActiveForSelfService(user: SessionUser, clubId: string) {
+  if (user.role !== "CLUB_MANAGER") return;
+  const club = await prisma.club.findUnique({ where: { id: clubId }, select: { status: true } });
+  if (!club) throw new NotFoundError("Club introuvable.");
+  if (club.status !== "ACTIVE") {
+    throw new ConflictError(
+      "Votre club n'est pas encore actif. Votre demande d'adhésion doit être validée par la fédération avant de pouvoir effectuer cette action.",
+    );
+  }
 }
 
 export async function createClub(user: SessionUser, input: CreateClubInput) {

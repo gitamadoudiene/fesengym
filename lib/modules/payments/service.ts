@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/permissions";
 import { generatePaymentReference } from "@/lib/modules/numbering/service";
 import { getApplicableFee } from "@/lib/modules/licenseFees/service";
+import { assertClubActiveForSelfService } from "@/lib/modules/clubs/service";
 import { writeAuditLog } from "@/lib/modules/audit/service";
 import { notifyFederalAdmins } from "@/lib/modules/notifications/service";
 import { ConflictError, NotFoundError } from "@/lib/errors";
@@ -25,6 +26,7 @@ export async function recordPayment(user: SessionUser, input: RecordPaymentInput
   if (restrictedClubId && request.clubId !== restrictedClubId) {
     throw new NotFoundError("Demande introuvable.");
   }
+  await assertClubActiveForSelfService(user, request.clubId);
   if (request.status !== "DRAFT" && request.status !== "CORRECTION_REQUESTED") {
     throw new ConflictError(
       "Un paiement ne peut être enregistré que pour une demande en préparation.",

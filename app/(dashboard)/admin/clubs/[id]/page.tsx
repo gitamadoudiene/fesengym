@@ -2,11 +2,14 @@ import { notFound, redirect } from "next/navigation";
 import { requireSessionUser } from "@/lib/auth/dal";
 import { isAdminRole, can } from "@/lib/auth/permissions";
 import { getClubById } from "@/lib/modules/clubs/service";
+import { listDocumentsForOwner } from "@/lib/modules/documents/service";
 import { NotFoundError } from "@/lib/errors";
 import { ClubStatusBadge } from "@/components/clubs/club-status-badge";
+import { DocumentsList } from "@/components/documents/documents-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClubForm } from "../club-form";
 import { ClubStatusActions } from "./status-actions";
+import { ClubApplicationActions } from "./application-actions";
 
 export default async function ClubDetailPage({
   params,
@@ -26,6 +29,11 @@ export default async function ClubDetailPage({
     throw error;
   }
 
+  const documents =
+    club.status === "PENDING" || club.status === "REJECTED"
+      ? await listDocumentsForOwner(user, "CLUB", club.id)
+      : [];
+
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-start justify-between">
@@ -41,10 +49,32 @@ export default async function ClubDetailPage({
             </span>
           </div>
         </div>
-        {can(user, "club.manage") && (
+        {can(user, "club.manage") && club.status !== "PENDING" && (
           <ClubStatusActions clubId={club.id} status={club.status} />
         )}
       </div>
+
+      {can(user, "club.manage") && club.status === "PENDING" && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="space-y-4 pt-6">
+            <p className="text-sm text-foreground">
+              Ce club a soumis une demande d&apos;adhésion. Vérifiez les
+              documents ci-dessous avant de valider.
+            </p>
+            <DocumentsList documents={documents} />
+            <ClubApplicationActions clubId={club.id} />
+          </CardContent>
+        </Card>
+      )}
+
+      {club.status === "REJECTED" && club.rejectionReason && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="pt-6 text-sm">
+            <p className="font-medium text-destructive">Adhésion refusée</p>
+            <p className="mt-1 text-muted-foreground">{club.rejectionReason}</p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

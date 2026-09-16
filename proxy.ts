@@ -9,10 +9,12 @@ import { auth } from "@/auth";
  */
 const PUBLIC_PREFIXES = [
   "/login",
+  "/register",
   "/verify-license",
   "/api/auth",
   "/api/public",
   "/api/cron",
+  "/api/club-applications",
 ];
 
 function isPublicPath(pathname: string): boolean {

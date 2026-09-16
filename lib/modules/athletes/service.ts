@@ -8,6 +8,7 @@ import {
   type SessionUser,
 } from "@/lib/auth/permissions";
 import { writeAuditLog } from "@/lib/modules/audit/service";
+import { assertClubActiveForSelfService } from "@/lib/modules/clubs/service";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import type {
   CreateAthleteInput,
@@ -148,6 +149,7 @@ export async function createAthlete(user: SessionUser, input: CreateAthleteInput
 
   const club = await prisma.club.findUnique({ where: { id: clubId } });
   if (!club) throw new NotFoundError("Club introuvable.");
+  await assertClubActiveForSelfService(user, clubId);
 
   const athlete = await prisma.athlete.create({
     data: {

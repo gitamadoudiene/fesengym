@@ -10,6 +10,7 @@ export type IconName =
   | "LayoutDashboard"
   | "FileText"
   | "CreditCard"
+  | "IdCard"
   | "Wallet"
   | "Users"
   | "Building2"
@@ -65,6 +66,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Paiements",
         href: "/payments",
         icon: "Wallet",
+        roles: ["SUPER_ADMIN", "FEDERAL_ADMIN"],
+      },
+      {
+        label: "Commandes de cartes",
+        href: "/admin/card-orders",
+        icon: "IdCard",
         roles: ["SUPER_ADMIN", "FEDERAL_ADMIN"],
       },
     ],

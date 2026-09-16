@@ -29,9 +29,19 @@ enum UserStatus {
 }
 
 enum ClubStatus {
+  PENDING // demande d'adhésion soumise, en attente de validation
   ACTIVE
   INACTIVE
   SUSPENDED
+  REJECTED // demande d'adhésion rejetée
+}
+
+enum CardOrderStatus {
+  REQUESTED
+  PRINTING
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }
 
 enum Sex {
@@ -129,6 +139,11 @@ enum NotificationType {
   NEW_REQUEST_ADMIN
   PAYMENT_TO_VERIFY_ADMIN
   INCOMPLETE_FILE_ADMIN
+  CLUB_APPLICATION_SUBMITTED
+  CLUB_APPLICATION_APPROVED
+  CLUB_APPLICATION_REJECTED
+  NEW_CLUB_APPLICATION_ADMIN
+  CARD_ORDER_UPDATED
 }
 
 enum SequenceType {
@@ -209,6 +224,9 @@ model Club {
   status            ClubStatus @default(ACTIVE)
   foundedAt         DateTime?
   notes             String?
+  rejectionReason   String? // motif si une demande d'adhésion est rejetée
+  reviewedAt        DateTime?
+  reviewedById      String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -219,6 +237,7 @@ model Club {
   licenses        License[]
   payments        Payment[]
   documents       Document[]
+  cardOrders      CardOrder[]
 
   @@index([status])
   @@map("clubs")
@@ -486,6 +505,7 @@ model License {
   payments        Payment[]
   renewalRequests LicenseRequest[] @relation("RequestOriginLicense")
   documents       Document[]
+  cardOrders      CardOrder[]
 
   @@index([clubId])
   @@index([status])
@@ -493,6 +513,32 @@ model License {
   @@index([expiresAt])
   @@index([athleteId])
   @@map("licenses")
+}
+
+// ---------------------------------------------------------------------------
+// Commande de carte physique
+// ---------------------------------------------------------------------------
+
+model CardOrder {
+  id        String           @id @default(cuid())
+  licenseId String
+  license   License          @relation(fields: [licenseId], references: [id])
+  clubId    String
+  club      Club             @relation(fields: [clubId], references: [id])
+  status    CardOrderStatus  @default(REQUESTED)
+
+  requestedById String
+  trackingReference String?
+  notes             String?
+
+  requestedAt DateTime  @default(now())
+  printedAt   DateTime?
+  shippedAt   DateTime?
+  deliveredAt DateTime?
+
+  @@index([clubId])
+  @@index([status])
+  @@map("card_orders")
 }
 
 // ---------------------------------------------------------------------------

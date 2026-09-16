@@ -7,6 +7,7 @@ import { getLicenseById } from "@/lib/modules/licenses/service";
 import { NotFoundError } from "@/lib/errors";
 import { LicenseStatusBadge } from "@/components/licenses/license-status-badge";
 import { LicenseActions } from "@/components/licenses/license-actions";
+import { CardOrderSection } from "@/components/licenses/card-order-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -29,6 +30,7 @@ export default async function LicenseDetailPage({
     can(user, "request.create") &&
     isOwnClub &&
     (license.status === "ACTIVE" || license.status === "EXPIRED");
+  const canOrderCard = can(user, "card.order") && isOwnClub && license.status === "ACTIVE";
 
   const qrSvg = license.qrCodeUrl
     ? await QRCode.toString(license.qrCodeUrl, { type: "svg", margin: 1, width: 96 })
@@ -117,6 +119,16 @@ export default async function LicenseDetailPage({
             }
           />
           <Field label="Date de validation" value={license.validatedAt?.toLocaleDateString("fr-FR")} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <CardOrderSection
+            licenseId={license.id}
+            latestOrder={license.cardOrders[0] ?? null}
+            canOrder={canOrderCard}
+          />
         </CardContent>
       </Card>
     </div>

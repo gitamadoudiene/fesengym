@@ -74,18 +74,27 @@ brief demande des mécanismes modernes).
 
 ---
 
-## D5 — Stockage fichiers : abstraction StorageProvider (local dev / S3-compatible prod)
+## D5 — Stockage fichiers : abstraction StorageProvider (local dev / Vercel Blob prod)
 
-**Contexte** : §26 du brief interdit de stocker les fichiers en base et impose une abstraction vers
-S3/Cloudinary/Supabase/R2.
+**Contexte** : §26 du brief interdit de stocker les fichiers en base et impose une abstraction. Le
+projet étant déployé sur Vercel (voir D12), Cloudflare R2 initialement envisagé aurait ajouté un
+fournisseur et des identifiants supplémentaires à configurer manuellement.
 
-**Décision** : interface `StorageProvider` avec deux implémentations dès le MVP : `LocalStorageProvider`
-(disque local, pratique en dev et pour un VPS mono-serveur) et `S3StorageProvider` (compatible
-Cloudflare R2, AWS S3, Backblaze B2 via l'API S3).
+**Décision** : interface `StorageProvider` avec deux implémentations : `LocalStorageProvider`
+(disque local, développement uniquement — système de fichiers éphémère en serverless) et
+`VercelBlobStorageProvider` (`@vercel/blob`, provisionné en un clic depuis l'onglet Storage du
+projet Vercel, comme la base de données).
 
-**Raison** : Cloudflare R2 est recommandé en production pour son coût nul de sortie de bande passante
-(egress) et sa compatibilité API S3 totale — pas de verrouillage fournisseur. Le choix reste
-configurable via `STORAGE_DRIVER`.
+**Contrainte de sécurité importante** : Vercel Blob ne propose que des URLs **publiques** (pas
+d'ACL privée). Pour des documents sensibles (certificats médicaux, pièces d'identité, statuts de
+club), l'URL Blob n'est donc **jamais renvoyée au client** : `Document.storageKey` la conserve
+côté serveur uniquement, et tout téléchargement passe par la route authentifiée et vérifiée par
+permission `/api/documents/[id]`, qui relit le fichier et le relaie (voir
+`lib/modules/storage/vercel-blob.ts` et `lib/modules/documents/service.ts`).
+
+**Raison** : cohérence avec le choix d'hébergement (un seul écosystème à configurer), coût nul à
+l'usage prévu, et la contrainte d'URL publique est neutralisée par le proxy d'accès plutôt que par
+le fournisseur de stockage lui-même — ce qui reste vrai même si le fournisseur change plus tard.
 
 ---
 
@@ -193,3 +202,41 @@ l'information dans deux machines à états distinctes.
 statut du paiement) est une source classique d'incohérence (que faire si le paiement est rejeté après
 que la demande soit passée en `PAYMENT_VERIFICATION` ?). Une seule source de vérité par préoccupation
 (le paiement pour l'argent, la demande pour le dossier) est plus robuste et plus simple à auditer.
+
+---
+
+## D12 — Déploiement réel : Vercel + Prisma Postgres (plutôt que VPS/Neon prévus initialement)
+
+**Contexte** : ARCHITECTURE.md §14 recommandait un VPS Docker ou Vercel + Neon. En pratique,
+l'utilisateur a déployé via l'intégration native de Vercel ("Prisma Postgres", proposée directement
+dans l'assistant de création de projet), sans étape Neon séparée.
+
+**Décision** : conserver Vercel + Prisma Postgres comme cible de déploiement documentée. Le
+connecteur reste du PostgreSQL standard (`postgresql://`) via Prisma — aucune adhérence de code à
+Neon spécifiquement, donc aucun changement requis dans le code applicatif.
+
+**Raison** : c'est le chemin que la fédération a effectivement suivi et qui fonctionne ; documenter
+la réalité plutôt qu'un plan non exécuté. Un incident de configuration a été rencontré et corrigé au
+passage : les variables d'environnement (`AUTH_SECRET`, `CRON_SECRET`, etc.) doivent être cochées
+pour l'environnement **Production** dans Vercel, pas seulement Development — sinon Auth.js échoue
+avec une erreur de configuration générique (`MissingSecret`/`UntrustedHost`) sur toutes les routes
+`/api/auth/*`.
+
+---
+
+## D13 — Auto-inscription des clubs : compte actif immédiatement, capacités bloquées jusqu'à validation
+
+**Contexte** : le produit devait évoluer pour permettre à un club de s'inscrire lui-même (au lieu
+d'être créé uniquement par un administrateur) et de soumettre une demande d'adhésion avec pièces
+justificatives.
+
+**Décision** : `Club.status` gagne les valeurs `PENDING` (par défaut à l'auto-inscription) et
+`REJECTED`. Le compte `CLUB_MANAGER` associé est créé `ACTIVE` et peut se connecter immédiatement,
+mais toute action de libre-service (créer un athlète, une demande, un paiement) est bloquée tant que
+`Club.status !== "ACTIVE"`, via `assertClubActiveForSelfService()` appelée dans chaque service
+concerné — jamais uniquement dans l'interface.
+
+**Raison** : permettre au club de suivre l'état de sa demande (voir son tableau de bord, ses
+documents soumis) sans lui laisser croire qu'il peut déjà opérer, tout en gardant l'isolation et les
+contrôles de sécurité existants intacts (la vérification se fait au niveau service, pas au niveau
+route ou UI).

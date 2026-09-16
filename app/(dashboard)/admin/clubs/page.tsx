@@ -52,6 +52,28 @@ export default async function ClubsListPage({
         </Button>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: "Tous", value: undefined },
+          { label: "En attente d'adhésion", value: "PENDING" },
+          { label: "Actifs", value: "ACTIVE" },
+          { label: "Suspendus", value: "SUSPENDED" },
+          { label: "Refusés", value: "REJECTED" },
+        ].map((f) => (
+          <Link
+            key={f.label}
+            href={f.value ? `/admin/clubs?status=${f.value}` : "/admin/clubs"}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              query.status === f.value
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
+
       <form className="flex gap-2" action="/admin/clubs">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

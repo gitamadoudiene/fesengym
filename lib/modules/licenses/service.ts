@@ -124,6 +124,7 @@ export async function getLicenseById(user: SessionUser, id: string) {
       season: { select: { name: true } },
       payments: { orderBy: { createdAt: "desc" } },
       validatedBy: { select: { firstName: true, lastName: true } },
+      cardOrders: { orderBy: { requestedAt: "desc" }, take: 1 },
     },
   });
   if (!license) throw new NotFoundError("Licence introuvable.");

@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireSessionUser } from "@/lib/auth/dal";
 import { getClubById } from "@/lib/modules/clubs/service";
+import { listDocumentsForOwner } from "@/lib/modules/documents/service";
 import { ClubStatusBadge } from "@/components/clubs/club-status-badge";
+import { DocumentsList } from "@/components/documents/documents-list";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ClubProfilePage() {
@@ -11,6 +13,10 @@ export default async function ClubProfilePage() {
   }
 
   const club = await getClubById(user, user.clubId);
+  const documents =
+    club.status === "PENDING" || club.status === "REJECTED"
+      ? await listDocumentsForOwner(user, "CLUB", club.id)
+      : [];
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -23,6 +29,38 @@ export default async function ClubProfilePage() {
           <ClubStatusBadge status={club.status} />
         </div>
       </div>
+
+      {club.status === "PENDING" && (
+        <Card className="border-warning/30 bg-warning/5">
+          <CardContent className="space-y-3 pt-6 text-sm">
+            <p className="font-medium text-warning">
+              Votre demande d&apos;adhésion est en cours d&apos;examen
+            </p>
+            <p className="text-muted-foreground">
+              L&apos;administration fédérale vérifie vos documents. Vous
+              pourrez gérer vos athlètes et licences dès validation.
+            </p>
+            <DocumentsList documents={documents} />
+          </CardContent>
+        </Card>
+      )}
+
+      {club.status === "REJECTED" && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="space-y-3 pt-6 text-sm">
+            <p className="font-medium text-destructive">
+              Votre demande d&apos;adhésion a été refusée
+            </p>
+            {club.rejectionReason && (
+              <p className="text-muted-foreground">{club.rejectionReason}</p>
+            )}
+            <p className="text-muted-foreground">
+              Contactez l&apos;administration fédérale pour plus
+              d&apos;informations.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
