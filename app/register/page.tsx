@@ -1,18 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
+import { AuthBackground } from "@/components/layout/auth-background";
 import { RegisterForm } from "./register-form";
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-xl space-y-6">
+    <AuthBackground>
+      <div className="mx-auto w-full max-w-xl space-y-6">
         <div className="text-center">
           <Image
             src="/logo.png"
             alt="Fédération Sénégalaise de Gymnastique"
-            width={56}
-            height={56}
-            className="mx-auto mb-4"
+            width={64}
+            height={64}
+            quality={100}
+            className="mx-auto mb-4 block"
           />
           <h1 className="font-heading text-2xl font-bold text-foreground">
             Demande d&apos;adhésion
@@ -32,6 +34,6 @@ export default function RegisterPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </AuthBackground>
   );
 }

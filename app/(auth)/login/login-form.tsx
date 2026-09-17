@@ -14,7 +14,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
   );
 
   return (
-    <Card>
+    <Card className="shadow-xl shadow-primary/5">
       <CardContent className="pt-6">
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="callbackUrl" value={callbackUrl} />

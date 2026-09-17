@@ -2,6 +2,7 @@ import Image from "next/image";
 import QRCode from "qrcode";
 import { CheckCircle2, PauseCircle, XCircle } from "lucide-react";
 import { getPublicLicenseView } from "@/lib/modules/licenses/service";
+import { AuthBackground } from "@/components/layout/auth-background";
 import { cn } from "@/lib/utils";
 
 export default async function VerifyLicensePage({
@@ -15,15 +16,16 @@ export default async function VerifyLicensePage({
   const qrSvg = await QRCode.toString(verifyUrl, { type: "svg", margin: 1, width: 120 });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
-      <div className="w-full max-w-sm space-y-6 text-center">
+    <AuthBackground>
+      <div className="mx-auto w-full max-w-sm space-y-6 text-center">
         <div>
           <Image
             src="/logo.png"
             alt="Fédération Sénégalaise de Gymnastique"
-            width={56}
-            height={56}
-            className="mx-auto mb-3"
+            width={64}
+            height={64}
+            quality={100}
+            className="mx-auto mb-4 block"
           />
           <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Vérification de licence
@@ -64,12 +66,12 @@ export default async function VerifyLicensePage({
 
         {license && (
           <div
-            className="mx-auto w-fit rounded-md border border-border bg-card p-2 [&_svg]:h-24 [&_svg]:w-24"
+            className="mx-auto w-fit rounded-md border border-border bg-card p-2 shadow-xl shadow-primary/5 [&_svg]:h-24 [&_svg]:w-24"
             dangerouslySetInnerHTML={{ __html: qrSvg }}
           />
         )}
       </div>
-    </div>
+    </AuthBackground>
   );
 }
 
@@ -89,7 +91,7 @@ function StatusPanel({
   return (
     <div
       className={cn(
-        "rounded-xl border p-6",
+        "rounded-xl border p-6 shadow-xl shadow-primary/5",
         tone === "success" && "border-success/30 bg-success/5",
         tone === "warning" && "border-warning/30 bg-warning/5",
         tone === "destructive" && "border-destructive/30 bg-destructive/5",

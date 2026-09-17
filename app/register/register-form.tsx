@@ -59,7 +59,7 @@ export function RegisterForm() {
   }
 
   return (
-    <Card>
+    <Card className="shadow-xl shadow-primary/5">
       <CardContent className="pt-6">
         <form onSubmit={onSubmit} className="space-y-6">
           <section className="space-y-4">

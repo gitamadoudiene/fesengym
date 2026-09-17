@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { AuthBackground } from "@/components/layout/auth-background";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -9,15 +10,16 @@ export default async function LoginPage({
     typeof params.callbackUrl === "string" ? params.callbackUrl : "/dashboard";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
+    <AuthBackground>
+      <div className="mx-auto w-full max-w-sm">
         <div className="mb-8 text-center">
           <Image
             src="/logo.png"
             alt="Fédération Sénégalaise de Gymnastique"
-            width={56}
-            height={56}
-            className="mx-auto mb-4"
+            width={64}
+            height={64}
+            quality={100}
+            className="mx-auto mb-4 block"
           />
           <h1 className="font-heading text-2xl font-bold text-foreground">
             FSG Gestion
@@ -28,6 +30,6 @@ export default async function LoginPage({
         </div>
         <LoginForm callbackUrl={callbackUrl} />
       </div>
-    </div>
+    </AuthBackground>
   );
 }
