@@ -1,13 +1,15 @@
 import "server-only";
-import { put, del } from "@vercel/blob";
+import { put, get, del } from "@vercel/blob";
 import type { StorageProvider, StoredFile } from "./provider";
 
 /**
- * Vercel Blob n'offre que des URLs publiques (pas d'ACL privée) — voir
- * DECISIONS.md. Le "key" stocké est directement l'URL publique retournée
- * par Blob, mais elle n'est JAMAIS renvoyée telle quelle au client : tout
- * téléchargement passe par /api/documents/[id], qui vérifie les
- * permissions puis relit et relaie le contenu (voir documents/service.ts).
+ * Store Vercel Blob configuré en accès **privé** (voir DECISIONS.md D5/D15) :
+ * contrairement à un store public, un blob privé ne peut pas être lu par une
+ * simple requête HTTP sur son URL — il faut passer par `get(pathname,
+ * {access:'private'})` avec les identifiants du projet (OIDC + BLOB_STORE_ID,
+ * ou BLOB_READ_WRITE_TOKEN). C'est strictement mieux pour des documents
+ * sensibles (certificats médicaux, pièces d'identité) que l'ancienne
+ * approche "URL publique mais jamais communiquée au client".
  */
 export class VercelBlobStorageProvider implements StorageProvider {
   async save({
@@ -20,17 +22,25 @@ export class VercelBlobStorageProvider implements StorageProvider {
     mimeType: string;
   }): Promise<StoredFile> {
     const blob = await put(key, buffer, {
-      access: "public",
+      access: "private",
       contentType: mimeType,
       addRandomSuffix: true,
     });
-    return { key: blob.url };
+    // `pathname` reflète le nom réellement stocké (avec le suffixe aléatoire)
+    // — c'est cette valeur qu'il faut repasser à get()/del(), pas `key`.
+    return { key: blob.pathname };
   }
 
   async read(key: string): Promise<Buffer> {
-    const response = await fetch(key);
-    if (!response.ok) throw new Error(`Impossible de lire le fichier (${response.status}).`);
-    return Buffer.from(await response.arrayBuffer());
+    const result = await get(key, { access: "private" });
+    if (!result?.stream) {
+      throw new Error("Fichier introuvable dans le stockage Blob.");
+    }
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of result.stream as unknown as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
   }
 
   async delete(key: string): Promise<void> {

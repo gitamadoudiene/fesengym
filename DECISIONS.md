@@ -262,3 +262,24 @@ courbe de séparation + sections alternées), sans reprendre le contenu spécifi
 **Raison** : le brief demande explicitement une cohérence visuelle avec fesengym.com plutôt qu'une
 identité inventée par déduction. Une fois une source réelle disponible, la corriger prime sur la
 cohérence avec la version précédente.
+
+---
+
+## D15 — Vercel Blob : store privé (`access: "private"`) plutôt que public
+
+**Contexte** : D5 supposait un store Blob **public** avec relais systématique via `/api/documents/[id]`
+pour ne jamais exposer l'URL au client. En le configurant réellement sur Vercel, le store a été créé
+en mode **privé** — l'appel `put(..., {access:"public"})` échouait donc avec
+`Cannot use public access on a private store`.
+
+**Décision** : passer à `access: "private"` pour l'écriture (`put`) et la lecture (`get`), en utilisant
+l'API dédiée du SDK `@vercel/blob` (`get(pathname, {access:"private"})`, authentifiée via OIDC +
+`BLOB_STORE_ID` injectés automatiquement par Vercel) plutôt qu'un simple `fetch()` sur l'URL publique.
+Le `key` stocké en base (`Document.storageKey`) devient le `pathname` retourné par `put()` (qui inclut
+le suffixe aléatoire), pas l'URL.
+
+**Raison** : un store privé est strictement supérieur pour des documents sensibles (certificats
+médicaux, pièces d'identité) — la protection ne repose plus sur le fait de ne jamais divulguer une
+URL "publique mais imprévisible", mais sur une vraie vérification d'accès côté fournisseur de
+stockage. Le proxy applicatif (`/api/documents/[id]`) reste la seule voie d'accès pour l'utilisateur
+final, exactement comme prévu — seule l'implémentation du `StorageProvider` change.
