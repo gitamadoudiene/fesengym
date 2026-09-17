@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,9 +34,13 @@ export function AppSidebar({ navGroups }: { navGroups: NavGroup[] }) {
   return (
     <aside className="hidden w-62 shrink-0 flex-col bg-sidebar text-sidebar-foreground md:flex">
       <div className="flex items-center gap-3 border-b border-sidebar-border px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sidebar-primary font-heading text-sm font-bold text-sidebar-primary-foreground">
-          FSG
-        </div>
+        <Image
+          src="/logo.png"
+          alt="Fédération Sénégalaise de Gymnastique"
+          width={36}
+          height={36}
+          className="shrink-0"
+        />
         <div>
           <p className="font-heading text-sm font-semibold leading-tight">
             FSG Gestion

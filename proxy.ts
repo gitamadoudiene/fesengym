@@ -41,5 +41,9 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclut aussi tout fichier statique servi depuis /public (logo, icônes,
+  // polices...) via son extension — sinon une ressource comme
+  // /logofesengym.png était redirigée vers /login faute de session, et
+  // l'optimiseur d'images de Next.js recevait du HTML au lieu du PNG.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"],
 };

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -11,9 +12,13 @@ export default async function LoginPage({
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary font-heading text-xl font-bold text-primary-foreground">
-            FSG
-          </div>
+          <Image
+            src="/logo.png"
+            alt="Fédération Sénégalaise de Gymnastique"
+            width={56}
+            height={56}
+            className="mx-auto mb-4"
+          />
           <h1 className="font-heading text-2xl font-bold text-foreground">
             FSG Gestion
           </h1>
