@@ -240,3 +240,25 @@ concerné — jamais uniquement dans l'interface.
 documents soumis) sans lui laisser croire qu'il peut déjà opérer, tout en gardant l'isolation et les
 contrôles de sécurité existants intacts (la vérification se fait au niveau service, pas au niveau
 route ou UI).
+
+---
+
+## D14 — Recalibrage du design system sur le vrai site (2026-09-16)
+
+**Contexte** : fesengym.com restait injoignable, mais l'utilisateur a fourni un miroir fonctionnel
+du site (hébergé temporairement sur Hostinger) permettant une inspection réelle des styles calculés.
+
+**Constat** : palette réelle = vert profond `#1F4B3F` (hero, footer) + vert clair `#5BBB7B` (CTA/
+accent) — pas de jaune/or comme supposé initialement par analogie avec le drapeau. Police unique
+`DM Sans` partout (titres compris), pas de duo de polices. Structure de page d'accueil : hero sombre
+plein écran avec recherche + statistiques inline, séparation par une courbe blanche, sections
+alternant fond blanc/gris clair, cartes à coins arrondis avec image en tête.
+
+**Décision** : palette et police mises à jour dans `app/globals.css` (voir D5/D9), page d'accueil
+publique reconstruite pour refléter cette structure (hero sombre + stats réelles de la plateforme +
+courbe de séparation + sections alternées), sans reprendre le contenu spécifique du site public
+(actualités, annuaire de clubs avec notation, boutique) qui n'a pas sa place dans l'outil de gestion.
+
+**Raison** : le brief demande explicitement une cohérence visuelle avec fesengym.com plutôt qu'une
+identité inventée par déduction. Une fois une source réelle disponible, la corriger prime sur la
+cohérence avec la version précédente.

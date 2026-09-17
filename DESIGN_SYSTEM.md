@@ -1,11 +1,9 @@
 # DESIGN_SYSTEM.md — Identité visuelle FSG Gestion
 
-> **Note de transparence** : fesengym.com était injoignable au moment de cette analyse (erreur TLS
-> côté serveur — voir [DECISIONS.md § D10](DECISIONS.md#d10)). Cette base est construite à partir des
-> couleurs institutionnelles sénégalaises, des conventions visuelles des fédérations de gymnastique
-> (FIG) et des informations publiques sur la FSG (disciplines couvertes, ancrage à Dakar). Tout est
-> centralisé en tokens pour permettre un recalibrage rapide dès que le site sera consultable — à
-> refaire en priorité dès que possible plutôt que de considérer cette base comme définitive.
+> **Mise à jour** : fesengym.com était injoignable lors de l'analyse initiale (erreur TLS). Cette
+> version a été recalibrée sur le vrai site (miroir consulté le 2026-09-16 — voir
+> [DECISIONS.md § D14](DECISIONS.md#d14)) : palette, police (DM Sans) et structure de la page
+> d'accueil reflètent maintenant l'identité réelle de la FSG.
 
 ## 1. Principes directeurs
 
@@ -18,27 +16,28 @@
 
 ## 2. Palette (tokens)
 
+Extraite du vrai site (styles calculés, page d'accueil) : fond de hero/footer
+`rgb(31,75,63)`, bouton/accent `rgb(91,187,123)`, section neutre `rgb(245,245,245)`,
+texte de corps `rgb(107,113,119)`.
+
 ```css
 /* Marque */
---color-primary:        #0B6E4F;  /* vert institutionnel profond (drapeau sénégalais, assombri pour usage UI) */
---color-primary-hover:  #095A40;
---color-primary-light:  #E6F3EE;  /* fonds teintés, badges */
+--color-primary:        #1F4B3F;  /* vert institutionnel profond — hero, footer, sidebar, boutons principaux */
+--color-brand-accent:   #5BBB7B;  /* vert clair — CTA, liens actifs, éléments interactifs (usage marketing) */
 
---color-secondary:      #C79A2B;  /* or/jaune institutionnel, assombri pour rester lisible en texte */
---color-secondary-hover:#A67F1F;
-
---color-accent:         #1F2933;  /* anthracite — utilisé pour contrastes forts, pas le rouge du drapeau
-                                      (réservé aux statuts d'erreur, pour éviter toute ambiguïté) */
+/* Secondaire = neutre (jamais une 3e teinte de vert, pour ne pas rivaliser avec les statuts) */
+--color-secondary:      #EEF1EF;
+--color-secondary-fg:   #16231D;
 
 /* Neutres */
---color-background:     #F7F8F6;  /* fond général, légèrement chaud */
+--color-background:     #F7F9F7;
 --color-surface:        #FFFFFF;
 --color-surface-muted:  #F1F3F1;
---color-border:         #E2E5E1;
---color-text:           #1A1F1C;
---color-text-muted:     #5B6660;
+--color-border:         #E1E6E2;
+--color-text:           #16231D;
+--color-text-muted:     #5C6B64;
 
-/* États (indépendants de la marque) */
+/* États (indépendants de la marque — aucun n'est un vert) */
 --color-success:        #1E8E5A;
 --color-success-bg:     #E7F6EE;
 --color-warning:        #B9770E;
@@ -48,9 +47,9 @@
 --color-info:           #2563A6;
 --color-info-bg:        #E8F1FA;
 
-/* Mode sombre (sidebar/topbar uniquement, pas toute l'app) */
---color-dark-surface:   #10241C;
---color-dark-surface-2: #163429;
+/* Sidebar (dérivée du vert primaire, assombrie pour la profondeur) */
+--color-sidebar:        #163329;
+--color-sidebar-accent: #5BBB7B;  /* item actif, badge logo */
 --color-dark-text:      #EAF2EE;
 --color-dark-text-muted:#9DB3AA;
 ```
@@ -61,38 +60,39 @@ jamais en grande surface, pour ne pas alourdir l'interface.
 
 ## 3. Typographie
 
-- **Titres / chiffres clés** : `Manrope` (600–800) — géométrique, moderne, bonne présence pour les
-  gros nombres du dashboard.
-- **Texte UI / tableaux / formulaires** : `Inter` (400–600) — excellente lisibilité en petite taille,
-  chiffres tabulaires (`font-variant-numeric: tabular-nums`) pour l'alignement des colonnes numériques.
-- Chargement via Google Fonts (`fonts.googleapis.com`), fallback système
-  (`-apple-system, Segoe UI, Roboto, sans-serif`).
+- **Police unique : `DM Sans`** (400/500/700/800) — c'est la police utilisée sur fesengym.com pour
+  tous les textes, titres compris. On la charge via `next/font/google` (une seule famille, plusieurs
+  graisses, pas de fallback Google Fonts CSS nécessaire).
+- Chiffres tabulaires (`font-variant-numeric: tabular-nums`) pour l'alignement des colonnes
+  numériques dans les tableaux et KPI.
 
 Échelle :
 ```
-display   32/40  Manrope 700   → en-tête de page, KPI principal
-h1        24/32  Manrope 700   → titre de section
-h2        18/28  Manrope 600   → titre de carte
-body      14/20  Inter 400     → texte courant, tableaux
-label     12/16  Inter 600     → labels de formulaire, en-têtes de colonnes (uppercase, tracking large)
-caption   11/16  Inter 400     → texte secondaire, métadonnées
-kpi       28/32  Manrope 800   → valeur chiffrée d'une carte KPI
+display   32/40  DM Sans 800   → en-tête de page, KPI principal
+h1        24/32  DM Sans 700   → titre de section (le site public utilise ~45px en hero)
+h2        18/28  DM Sans 700   → titre de carte
+body      14/20  DM Sans 400   → texte courant, tableaux
+label     12/16  DM Sans 500   → labels de formulaire, en-têtes de colonnes (uppercase, tracking large)
+caption   11/16  DM Sans 400   → texte secondaire, métadonnées
+kpi       28/32  DM Sans 800   → valeur chiffrée d'une carte KPI
 ```
 
 ## 4. Composants clés
 
 **Boutons** — coins arrondis modérés (`radius-md` = 8px), pas de pilule complète (trop "startup"),
 pas d'angle droit (trop "admin générique").
-- Primaire : fond `--color-primary`, texte blanc, hover `--color-primary-hover`.
-- Secondaire : bordure `--color-border`, fond `--color-surface`, texte `--color-text`.
+- Primaire : fond `--color-primary`, texte blanc, hover à 80% d'opacité.
+- Accent (marketing/CTA publiques) : fond `--color-brand-accent`, texte blanc.
+- Secondaire : fond neutre `--color-secondary`, texte `--color-text` — jamais une teinte de vert
+  (voir §1, un 3e vert entrerait en conflit avec les couleurs de statut).
 - Destructif : fond `--color-danger`, réservé aux actions de rejet/suppression, toujours avec
   confirmation (§65 du brief).
 - État de chargement : spinner inline + texte inchangé (pas de changement de largeur du bouton).
 
 **Cartes KPI** — fond blanc, bordure `--color-border` fine, coin supérieur gauche avec un liseré de
-2px dans la couleur du domaine (vert = licences, or = clubs, anthracite = paiements). Valeur en
-`kpi`, libellé en `label` au-dessus, variation (vs saison précédente) en petit texte coloré
-success/danger sous la valeur.
+2px dans la couleur du domaine (vert primaire = licences, vert accent = clubs, bleu info = paiements).
+Valeur en `kpi`, libellé en `label` au-dessus, variation (vs saison précédente) en petit texte
+coloré success/danger sous la valeur.
 
 **Badges de statut** — pastille pleine + texte, jamais de couleur seule (accessibilité) :
 ```

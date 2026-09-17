@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const inter = Inter({
+// DM Sans — police utilisée sur fesengym.com (voir DESIGN_SYSTEM.md §3 /
+// DECISIONS.md D10), pour headings et texte courant.
+const dmSans = DM_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
-});
-
-const manrope = Manrope({
-  variable: "--font-heading",
-  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -22,10 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="fr"
-      className={`${inter.variable} ${manrope.variable} h-full antialiased`}
-    >
+    <html lang="fr" className={`${dmSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster />

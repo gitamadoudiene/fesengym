@@ -43,12 +43,20 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // Un `render` personnalisé (ex: <Link>) ne peut pas garantir la
+      // sémantique d'un <button> natif — base-ui avertit sinon (voir
+      // DECISIONS.md). Toujours vrai par défaut, sauf si le composant
+      // rendu n'est pas un vrai <button>.
+      nativeButton={nativeButton ?? !render}
       {...props}
     />
   )

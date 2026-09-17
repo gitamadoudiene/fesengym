@@ -9,6 +9,23 @@ function daysFromNow(days: number): Date {
 }
 
 /**
+ * Statistiques publiques (page d'accueil, non authentifiée) — uniquement des
+ * compteurs agrégés, jamais de donnée nominative. Voir DECISIONS.md D14 :
+ * mêmes chiffres affichés publiquement que sur fesengym.com (athlètes,
+ * clubs), calculés depuis la vraie base plutôt que codés en dur.
+ */
+export async function getPublicStats() {
+  const [totalAthletes, activeClubs, activeLicenses, currentSeason] = await Promise.all([
+    prisma.athlete.count(),
+    prisma.club.count({ where: { status: "ACTIVE" } }),
+    prisma.license.count({ where: { status: "ACTIVE" } }),
+    prisma.season.findFirst({ where: { isCurrent: true }, select: { name: true } }),
+  ]);
+
+  return { totalAthletes, activeClubs, activeLicenses, currentSeasonName: currentSeason?.name ?? null };
+}
+
+/**
  * KPI calculés via des agrégations SQL (count/sum), jamais en récupérant
  * l'ensemble des lignes pour les compter côté application — voir
  * ARCHITECTURE.md §13.
