@@ -107,7 +107,17 @@ type PublicLicense = NonNullable<
 
 function LicenseInfo({ license }: { license: PublicLicense }) {
   return (
-    <div className="mt-4 space-y-2 text-left text-sm">
+    <div className="mt-4 space-y-3 text-left text-sm">
+      {license.athlete.hasPhoto && (
+        <div className="mx-auto h-20 w-20 overflow-hidden rounded-full border border-border">
+          {/* eslint-disable-next-line @next/next/no-img-element -- servi par une route publique dédiée, pas un asset next/image */}
+          <img
+            src={`/api/public/verify/${encodeURIComponent(license.number)}/photo`}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
       <Row label="Athlète" value={`${license.athlete.firstName} ${license.athlete.lastName}`} />
       <Row label="Club" value={license.club.name} />
       <Row label="Discipline" value={license.discipline.name} />

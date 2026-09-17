@@ -25,6 +25,7 @@ export const updateAthleteSchema = createAthleteSchema
   .partial()
   .extend({
     status: z.enum(["ACTIVE", "INACTIVE", "SUSPENDED"]).optional(),
+    photoDocumentId: z.string().trim().optional(),
   });
 
 export const listAthletesQuerySchema = z.object({

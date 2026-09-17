@@ -7,6 +7,7 @@ import {
 } from "@/lib/auth/permissions";
 import { generateLicenseNumber } from "@/lib/modules/numbering/service";
 import { writeAuditLog } from "@/lib/modules/audit/service";
+import { getStorageProvider } from "@/lib/modules/storage";
 import { NotFoundError } from "@/lib/errors";
 import type { LicenseRequest, Prisma } from "@prisma/client";
 
@@ -117,7 +118,9 @@ export async function getLicenseById(user: SessionUser, id: string) {
   const license = await prisma.license.findUnique({
     where: { id },
     include: {
-      athlete: { select: { id: true, firstName: true, lastName: true } },
+      athlete: {
+        select: { id: true, firstName: true, lastName: true, photoDocumentId: true },
+      },
       club: { select: { id: true, name: true } },
       discipline: { select: { name: true } },
       category: { select: { name: true } },
@@ -151,7 +154,7 @@ export async function getPublicLicenseView(number: string) {
       status: true,
       issuedAt: true,
       expiresAt: true,
-      athlete: { select: { firstName: true, lastName: true } },
+      athlete: { select: { firstName: true, lastName: true, photoDocumentId: true } },
       club: { select: { name: true } },
       discipline: { select: { name: true } },
       category: { select: { name: true } },
@@ -163,7 +166,39 @@ export async function getPublicLicenseView(number: string) {
   const effectiveStatus =
     license.status === "ACTIVE" && license.expiresAt < now ? "EXPIRED" : license.status;
 
-  return { ...license, status: effectiveStatus };
+  return {
+    ...license,
+    status: effectiveStatus,
+    athlete: {
+      firstName: license.athlete.firstName,
+      lastName: license.athlete.lastName,
+      hasPhoto: !!license.athlete.photoDocumentId,
+    },
+  };
+}
+
+/**
+ * Photo publique associée à une licence (brief §19/§33 — la photo fait
+ * partie des informations non sensibles affichables sur la vérification
+ * publique). Volontairement étroit : uniquement le document de type PHOTO
+ * de l'athlète titulaire de CETTE licence, jamais un accès générique aux
+ * documents (voir /api/documents/[id] pour l'accès authentifié complet).
+ */
+export async function getPublicLicensePhoto(number: string) {
+  const license = await prisma.license.findUnique({
+    where: { number },
+    select: { athlete: { select: { photoDocumentId: true } } },
+  });
+  if (!license?.athlete.photoDocumentId) return null;
+
+  const document = await prisma.document.findUnique({
+    where: { id: license.athlete.photoDocumentId },
+  });
+  if (!document || document.type !== "PHOTO") return null;
+
+  const storage = getStorageProvider();
+  const buffer = await storage.read(document.storageKey);
+  return { buffer, mimeType: document.mimeType };
 }
 
 export async function suspendLicense(user: SessionUser, id: string, reason: string) {

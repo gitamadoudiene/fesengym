@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, User } from "lucide-react";
 import {
   createAthleteSchema,
   type CreateAthleteInput,
@@ -39,6 +39,7 @@ type AthleteFormProps = {
   categories: (Category & { discipline: { id: string } | null })[];
   clubs: Pick<Club, "id" | "name">[];
   requireClubSelect: boolean;
+  existingPhotoUrl?: string;
 };
 
 export function AthleteForm({
@@ -48,10 +49,13 @@ export function AthleteForm({
   categories,
   clubs,
   requireClubSelect,
+  existingPhotoUrl,
 }: AthleteFormProps) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(existingPhotoUrl ?? null);
   const {
     register,
     handleSubmit,
@@ -80,6 +84,37 @@ export function AthleteForm({
     }
   }
 
+  function onPhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    if (file) setPhotoPreview(URL.createObjectURL(file));
+  }
+
+  async function uploadPhoto(targetAthleteId: string) {
+    if (!photoFile) return;
+    const formData = new FormData();
+    formData.append("ownerType", "ATHLETE");
+    formData.append("ownerId", targetAthleteId);
+    formData.append("type", "PHOTO");
+    formData.append("file", photoFile);
+
+    const uploadRes = await fetch("/api/documents", { method: "POST", body: formData });
+    if (!uploadRes.ok) {
+      const body = await uploadRes.json().catch(() => null);
+      throw new Error(body?.error ?? "Échec de l'envoi de la photo.");
+    }
+    const document = await uploadRes.json();
+
+    const linkRes = await fetch(`/api/athletes/${targetAthleteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photoDocumentId: document.id }),
+    });
+    if (!linkRes.ok) {
+      throw new Error("La photo a été envoyée mais n'a pas pu être associée à l'athlète.");
+    }
+  }
+
   const onSubmit = handleSubmit(async (data) => {
     setSubmitting(true);
     try {
@@ -96,6 +131,11 @@ export function AthleteForm({
         throw new Error(body?.error ?? "Une erreur est survenue.");
       }
       const athlete = await response.json();
+
+      if (photoFile) {
+        await uploadPhoto(athlete.id);
+      }
+
       toast.success(athleteId ? "Athlète mis à jour." : "Athlète créé avec succès.");
       router.push(`/athletes/${athlete.id}`);
       router.refresh();
@@ -130,6 +170,24 @@ export function AthleteForm({
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element -- aperçu local (blob:) ou document authentifié, pas un asset optimisable par next/image
+                <img src={photoPreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-7 w-7 text-muted-foreground" />
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="photo">Photo de l&apos;athlète</Label>
+              <Input id="photo" type="file" accept="image/*" onChange={onPhotoChange} />
+              <p className="text-xs text-muted-foreground">
+                Utilisée sur la carte de licence et la vérification publique.
+              </p>
+            </div>
+          </div>
+
           {requireClubSelect && (
             <div className="space-y-2">
               <Label>Club *</Label>

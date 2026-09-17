@@ -74,27 +74,44 @@ export default async function LicenseDetailPage({
             LICENCE FSG — {license.season.name}
           </p>
         </div>
-        <div className="flex items-center justify-between gap-4 bg-card p-5">
-          <div className="space-y-1 text-sm">
-            <p className="font-heading text-lg font-bold text-foreground">
-              {license.athlete.firstName} {license.athlete.lastName}
-            </p>
-            <p className="text-muted-foreground">{license.club.name}</p>
-            <p className="text-muted-foreground">
-              {license.discipline.name} · {license.category.name}
-            </p>
-            <p className="font-mono text-xs text-muted-foreground">{license.number}</p>
-            <p className="text-xs text-muted-foreground">
-              Émise le {license.issuedAt.toLocaleDateString("fr-FR")} · Expire le{" "}
-              {license.expiresAt.toLocaleDateString("fr-FR")}
-            </p>
+        <div className="flex items-center gap-4 bg-card p-5">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
+            {license.athlete.photoDocumentId ? (
+              // eslint-disable-next-line @next/next/no-img-element -- document authentifié servi par notre API
+              <img
+                src={`/api/documents/${license.athlete.photoDocumentId}`}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="font-heading text-base font-bold text-muted-foreground">
+                {license.athlete.firstName[0]}
+                {license.athlete.lastName[0]}
+              </span>
+            )}
           </div>
-          {qrSvg && (
-            <div
-              className="shrink-0 [&_svg]:h-20 [&_svg]:w-20"
-              dangerouslySetInnerHTML={{ __html: qrSvg }}
-            />
-          )}
+          <div className="flex flex-1 items-center justify-between gap-4">
+            <div className="space-y-1 text-sm">
+              <p className="font-heading text-lg font-bold text-foreground">
+                {license.athlete.firstName} {license.athlete.lastName}
+              </p>
+              <p className="text-muted-foreground">{license.club.name}</p>
+              <p className="text-muted-foreground">
+                {license.discipline.name} · {license.category.name}
+              </p>
+              <p className="font-mono text-xs text-muted-foreground">{license.number}</p>
+              <p className="text-xs text-muted-foreground">
+                Émise le {license.issuedAt.toLocaleDateString("fr-FR")} · Expire le{" "}
+                {license.expiresAt.toLocaleDateString("fr-FR")}
+              </p>
+            </div>
+            {qrSvg && (
+              <div
+                className="shrink-0 [&_svg]:h-20 [&_svg]:w-20"
+                dangerouslySetInnerHTML={{ __html: qrSvg }}
+              />
+            )}
+          </div>
         </div>
       </div>
 

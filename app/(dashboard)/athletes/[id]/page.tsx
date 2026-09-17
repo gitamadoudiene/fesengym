@@ -34,20 +34,35 @@ export default async function AthleteDetailPage({
 
   const age = calculateAge(athlete.dateOfBirth);
 
+  const photoUrl = athlete.photoDocumentId ? `/api/documents/${athlete.photoDocumentId}` : undefined;
+
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <p className="font-mono text-xs text-muted-foreground">
-          {athlete.federalNumber ?? "N° fédéral non attribué"}
-        </p>
-        <h1 className="font-heading text-2xl font-bold text-foreground">
-          {athlete.firstName} {athlete.lastName}
-        </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <AthleteStatusBadge status={athlete.status} />
-          <span className="text-sm text-muted-foreground">
-            {athlete.club.name} · {age} ans
-          </span>
+      <div className="flex items-center gap-4">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- document authentifié servi par notre API, pas un asset next/image
+            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="font-heading text-lg font-bold text-muted-foreground">
+              {athlete.firstName[0]}
+              {athlete.lastName[0]}
+            </span>
+          )}
+        </div>
+        <div>
+          <p className="font-mono text-xs text-muted-foreground">
+            {athlete.federalNumber ?? "N° fédéral non attribué"}
+          </p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            {athlete.firstName} {athlete.lastName}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <AthleteStatusBadge status={athlete.status} />
+            <span className="text-sm text-muted-foreground">
+              {athlete.club.name} · {age} ans
+            </span>
+          </div>
         </div>
       </div>
 
@@ -81,6 +96,7 @@ export default async function AthleteDetailPage({
               categories={categories}
               clubs={clubs}
               requireClubSelect={false}
+              existingPhotoUrl={photoUrl}
               defaultValues={{
                 firstName: athlete.firstName,
                 lastName: athlete.lastName,
