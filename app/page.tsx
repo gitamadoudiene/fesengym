@@ -39,7 +39,7 @@ export default async function Home() {
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="FSG" width={36} height={36} />
+            <Image src="/logovert.png" alt="FSG" width={36} height={36} />
             <span className="font-heading text-[15px] font-bold tracking-tight text-foreground">
               FSG Gestion
             </span>
@@ -259,7 +259,7 @@ export default async function Home() {
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <Image src="/logo.png" alt="FSG" width={32} height={32} />
+                <Image src="/logovert.png" alt="FSG" width={32} height={32} />
                 <span className="font-heading text-sm font-bold text-white">
                   FSG Gestion
                 </span>

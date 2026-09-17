@@ -20,7 +20,7 @@ export default async function VerifyLicensePage({
       <div className="mx-auto w-full max-w-sm space-y-6 text-center">
         <div>
           <Image
-            src="/logo.png"
+            src="/logovert.png"
             alt="Fédération Sénégalaise de Gymnastique"
             width={64}
             height={64}

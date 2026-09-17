@@ -14,7 +14,7 @@ export default async function LoginPage({
       <div className="mx-auto w-full max-w-sm">
         <div className="mb-8 text-center">
           <Image
-            src="/logo.png"
+            src="/logovert.png"
             alt="Fédération Sénégalaise de Gymnastique"
             width={64}
             height={64}

@@ -9,7 +9,7 @@ export default function RegisterPage() {
       <div className="mx-auto w-full max-w-xl space-y-6">
         <div className="text-center">
           <Image
-            src="/logo.png"
+            src="/logovert.png"
             alt="Fédération Sénégalaise de Gymnastique"
             width={64}
             height={64}
